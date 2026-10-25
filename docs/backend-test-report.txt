@@ -1,0 +1,38 @@
+
+> backend@1.0.0 test:cov
+> jest --runInBand --coverage
+
+PASS tests/vehicles.test.ts (9.318 s)
+PASS tests/inventory.test.ts (5.207 s)
+PASS tests/search.test.ts
+PASS tests/login.test.ts
+PASS tests/seed.test.ts
+PASS tests/auth.test.ts
+PASS tests/middleware.test.ts
+--------------------|---------|----------|---------|---------|-------------------
+File                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------|---------|----------|---------|---------|-------------------
+All files           |   97.65 |    93.49 |     100 |   97.95 |                   
+ src                |     100 |      100 |     100 |     100 |                   
+  app.ts            |     100 |      100 |     100 |     100 |                   
+  config.ts         |     100 |      100 |     100 |     100 |                   
+  db.ts             |     100 |      100 |     100 |     100 |                   
+  errors.ts         |     100 |      100 |     100 |     100 |                   
+ src/middleware     |    92.3 |    93.33 |     100 |    92.3 |                   
+  auth.ts           |     100 |      100 |     100 |     100 |                   
+  errorHandler.ts   |      75 |       75 |     100 |      75 | 12-13             
+ src/routes         |     100 |       50 |     100 |     100 |                   
+  auth.ts           |     100 |       50 |     100 |     100 | 10-15             
+  vehicles.ts       |     100 |      100 |     100 |     100 |                   
+ src/services       |   97.33 |    94.94 |     100 |   97.84 |                   
+  authService.ts    |    92.3 |    91.66 |     100 |    92.3 | 36-39             
+  vehicleService.ts |   99.09 |       96 |     100 |     100 | 60-79,82          
+ tests              |     100 |      100 |     100 |     100 |                   
+  helpers.ts        |     100 |      100 |     100 |     100 |                   
+--------------------|---------|----------|---------|---------|-------------------
+
+Test Suites: 7 passed, 7 total
+Tests:       130 passed, 130 total
+Snapshots:   0 total
+Time:        18.945 s, estimated 20 s
+Ran all test suites.
