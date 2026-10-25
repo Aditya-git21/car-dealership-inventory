@@ -163,3 +163,41 @@ export function searchVehicles(db: Db, query: Record<string, unknown>): Vehicle[
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   return db.prepare(`SELECT ${COLUMNS} FROM vehicles ${where} ORDER BY id`).all(...params) as Vehicle[];
 }
+
+// ---------- Inventory ----------
+
+// The stock check and the decrement happen in ONE statement, so two buyers
+// can never both take the last car. "changes = 0" means no row matched.
+export function purchaseVehicle(db: Db, id: number): Vehicle {
+  const info = db
+    .prepare('UPDATE vehicles SET quantity = quantity - 1 WHERE id = ? AND quantity > 0')
+    .run(id);
+
+  if (info.changes === 0) {
+    getVehicle(db, id); // throws 404 if the vehicle doesn't exist
+    throw new HttpError(409, 'Vehicle is out of stock');
+  }
+  return getVehicle(db, id);
+}
+
+export function restockVehicle(db: Db, id: number, amount: unknown): Vehicle {
+  if (
+    typeof amount !== 'number' ||
+    !Number.isInteger(amount) ||
+    amount < 1 ||
+    amount > MAX_QUANTITY
+  ) {
+    throw new HttpError(400, `amount must be a whole number between 1 and ${MAX_QUANTITY}`);
+  }
+
+  // Same idea: add stock only if the new total stays within the limit
+  const info = db
+    .prepare('UPDATE vehicles SET quantity = quantity + ? WHERE id = ? AND quantity + ? <= ?')
+    .run(amount, id, amount, MAX_QUANTITY);
+
+  if (info.changes === 0) {
+    getVehicle(db, id); // throws 404 if the vehicle doesn't exist
+    throw new HttpError(400, `Stock cannot exceed ${MAX_QUANTITY}`);
+  }
+  return getVehicle(db, id);
+}

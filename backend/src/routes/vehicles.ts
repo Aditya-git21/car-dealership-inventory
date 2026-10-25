@@ -8,6 +8,8 @@ import {
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  purchaseVehicle,
+  restockVehicle,
 } from '../services/vehicleService';
 
 export function vehicleRoutes(db: Db) {
@@ -37,6 +39,15 @@ export function vehicleRoutes(db: Db) {
   router.delete('/:id', requireAdmin, (req, res) => {
     deleteVehicle(db, parseId(req.params.id));
     res.status(204).send();
+  });
+    // Any logged-in user can buy
+  router.post('/:id/purchase', (req, res) => {
+    res.json(purchaseVehicle(db, parseId(req.params.id)));
+  });
+
+  // Admin only
+  router.post('/:id/restock', requireAdmin, (req, res) => {
+    res.json(restockVehicle(db, parseId(req.params.id), req.body?.amount));
   });
 
   return router;
