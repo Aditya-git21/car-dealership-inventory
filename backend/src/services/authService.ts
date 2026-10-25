@@ -67,3 +67,20 @@ export function loginUser(db: Db, email: unknown, password: unknown) {
   });
   return { token, user: { id: row.id, email: row.email, role: row.role } };
 }
+
+// Used by the seed script. Creates an admin, or promotes an existing user.
+// Safe to run repeatedly.
+export function ensureAdmin(db: Db, email: string, password: string) {
+  const cleanEmail = email.trim().toLowerCase();
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(cleanEmail) as
+    | { id: number }
+    | undefined;
+
+  if (existing) {
+    db.prepare("UPDATE users SET role = 'ADMIN' WHERE id = ?").run(existing.id);
+    return;
+  }
+  // registerUser applies the same email/password validation as normal signups
+  const user = registerUser(db, email, password);
+  db.prepare("UPDATE users SET role = 'ADMIN' WHERE id = ?").run(user.id);
+}
