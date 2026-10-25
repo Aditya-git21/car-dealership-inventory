@@ -6,7 +6,8 @@ export function authRoutes(db: Db) {
   const router = Router();
 
   router.post('/register', (req, res) => {
-    const { email, password } = req.body;
+    // req.body can be undefined if no body was sent, so default to {}
+    const { email, password } = req.body ?? {};
     const user = registerUser(db, email, password);
     res.status(201).json({ user });
   });
