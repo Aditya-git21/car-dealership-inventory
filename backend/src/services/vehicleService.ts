@@ -99,3 +99,67 @@ export function deleteVehicle(db: Db, id: number): void {
   getVehicle(db, id); // 404 if it doesn't exist
   db.prepare('DELETE FROM vehicles WHERE id = ?').run(id);
 }
+
+// ---------- Search ----------
+
+// Query params arrive as text, or arrays if repeated (?make=a&make=b)
+function optionalText(value: unknown, field: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw new HttpError(400, `${field} must be a single value`);
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed; // blank filter = no filter
+}
+
+function optionalPrice(value: unknown, field: string): number | undefined {
+  const text = optionalText(value, field);
+  if (text === undefined) return undefined;
+  if (!/^\d+(\.\d+)?$/.test(text)) {
+    throw new HttpError(400, `${field} must be a non-negative number`);
+  }
+  return Number(text);
+}
+
+// In LIKE, % and _ are wildcards. Escape them so the user's text is matched literally.
+function likePattern(text: string): string {
+  return `%${text.replace(/[\\%_]/g, '\\$&')}%`;
+}
+
+export function searchVehicles(db: Db, query: Record<string, unknown>): Vehicle[] {
+  const make = optionalText(query.make, 'make');
+  const model = optionalText(query.model, 'model');
+  const category = optionalText(query.category, 'category');
+  const minPrice = optionalPrice(query.minPrice, 'minPrice');
+  const maxPrice = optionalPrice(query.maxPrice, 'maxPrice');
+
+  if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+    throw new HttpError(400, 'minPrice cannot be greater than maxPrice');
+  }
+
+  // Build the WHERE clause only from the filters that were provided.
+  // Values always go through ? placeholders, never into the SQL text.
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+  if (make) {
+    conditions.push(`make LIKE ? ESCAPE '\\'`);
+    params.push(likePattern(make));
+  }
+  if (model) {
+    conditions.push(`model LIKE ? ESCAPE '\\'`);
+    params.push(likePattern(model));
+  }
+  if (category) {
+    conditions.push(`category LIKE ? ESCAPE '\\'`);
+    params.push(likePattern(category));
+  }
+  if (minPrice !== undefined) {
+    conditions.push('price >= ?');
+    params.push(minPrice);
+  }
+  if (maxPrice !== undefined) {
+    conditions.push('price <= ?');
+    params.push(maxPrice);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  return db.prepare(`SELECT ${COLUMNS} FROM vehicles ${where} ORDER BY id`).all(...params) as Vehicle[];
+}

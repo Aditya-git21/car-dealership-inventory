@@ -4,6 +4,7 @@ import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   parseId,
   listVehicles,
+  searchVehicles,
   createVehicle,
   updateVehicle,
   deleteVehicle,
@@ -17,6 +18,11 @@ export function vehicleRoutes(db: Db) {
 
   router.get('/', (_req, res) => {
     res.json(listVehicles(db));
+  });
+
+  // Keep fixed paths like /search above any '/:id' route, or "search" gets read as an id
+  router.get('/search', (req, res) => {
+    res.json(searchVehicles(db, req.query));
   });
 
   router.post('/', (req, res) => {
