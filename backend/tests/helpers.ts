@@ -24,3 +24,16 @@ export async function tokenFor(app: App, db: Db, role: 'USER' | 'ADMIN'): Promis
   const res = await request(app).post('/api/auth/login').send({ email, password });
   return res.body.token;
 }
+
+// Inserts a vehicle directly into the DB and returns its id
+export function insertVehicle(db: Db, quantity: number): number {
+  const info = db
+    .prepare('INSERT INTO vehicles (make, model, category, price, quantity) VALUES (?, ?, ?, ?, ?)')
+    .run('Toyota', 'Camry', 'Sedan', 25000, quantity);
+  return Number(info.lastInsertRowid);
+}
+
+export function quantityOf(db: Db, id: number): number {
+  const row = db.prepare('SELECT quantity FROM vehicles WHERE id = ?').get(id) as { quantity: number };
+  return row.quantity;
+}
