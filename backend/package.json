@@ -7,7 +7,7 @@
     "dev": "ts-node-dev src/server.ts",
     "test": "jest --runInBand",
     "test:cov": "jest --runInBand --coverage"
-},
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -32,6 +32,6 @@
     "supertest": "^7.3.1",
     "ts-jest": "^29.4.15",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }
