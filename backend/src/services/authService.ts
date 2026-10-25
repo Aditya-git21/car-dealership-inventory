@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { Db } from '../db';
 import { HttpError } from '../errors';
+import { JWT_SECRET, JWT_EXPIRES_IN } from '../config';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -36,4 +38,32 @@ export function registerUser(db: Db, email: unknown, password: unknown) {
     }
     throw err;
   }
+}
+
+interface UserRow {
+  id: number;
+  email: string;
+  role: string;
+  password_hash: string;
+}
+
+export function loginUser(db: Db, email: unknown, password: unknown) {
+  if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+    throw new HttpError(400, 'Email and password are required');
+  }
+
+  const row = db
+    .prepare('SELECT id, email, role, password_hash FROM users WHERE email = ?')
+    .get(email.trim().toLowerCase()) as UserRow | undefined;
+
+  // Same message for "no such user" and "wrong password", so attackers
+  // can't use the API to find out which emails are registered
+  if (!row || !bcrypt.compareSync(password, row.password_hash)) {
+    throw new HttpError(401, 'Invalid email or password');
+  }
+
+  const token = jwt.sign({ id: row.id, role: row.role }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
+  return { token, user: { id: row.id, email: row.email, role: row.role } };
 }

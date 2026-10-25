@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Db } from '../db';
-import { registerUser } from '../services/authService';
+import { registerUser, loginUser } from '../services/authService';
 
 export function authRoutes(db: Db) {
   const router = Router();
@@ -8,8 +8,12 @@ export function authRoutes(db: Db) {
   router.post('/register', (req, res) => {
     // req.body can be undefined if no body was sent, so default to {}
     const { email, password } = req.body ?? {};
-    const user = registerUser(db, email, password);
-    res.status(201).json({ user });
+    res.status(201).json({ user: registerUser(db, email, password) });
+  });
+
+  router.post('/login', (req, res) => {
+    const { email, password } = req.body ?? {};
+    res.json(loginUser(db, email, password));
   });
 
   return router;
